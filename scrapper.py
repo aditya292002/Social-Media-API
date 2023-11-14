@@ -3,7 +3,7 @@ import requests
 import fitz  # PyMuPDF
 
 class data_scrapper:
-    def __int__(self):
+    def __init__(self):
         self.myWebData = []  # this stores the web data
         self.myPdfData = []  # this stores the pdf data
     
@@ -12,8 +12,8 @@ class data_scrapper:
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Remove following tags
-        for tag in soup(['header', 'nav', 'footer']):
-            tag.decompose()
+        # for tag in soup(['header', 'nav', 'footer']):
+        #     tag.decompose()
 
         # Find all heading, paragraph, table, and list tags
         tags = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'table', 'ul', 'ol'])

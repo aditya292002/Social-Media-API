@@ -1,13 +1,15 @@
 # from typing import Annotated
 from fastapi import APIRouter
 from icecream import ic
-from fastapi import FastAPI, File, UploadFile
+from fastapi import Request, Form, FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from mcq_generator import * 
 from scrapper import *
 from openai_handler import *
 import asyncio
+from fastapi.templating import Jinja2Templates
+
 
 router_gen_mcq = APIRouter(
     prefix='/process',
@@ -17,6 +19,9 @@ router_gen_mcq = APIRouter(
 
 class URL(BaseModel): 
     url: str
+
+
+templates = Jinja2Templates(directory="templates")
 
 
 
@@ -38,15 +43,7 @@ async def test(user_input):
         thread_id=thread.id,
         assistant_id=assistant_id,
         instructions="""
-        Generate at most 1 multiple choice questions. 
-        user json format for each question, and return list of json objects [
-            {
-                question : "question1"
-                options : [option1, option2, option3, option4]
-                answer: "optionx with, 1 line explantion"
-            }
-            ....
-        ]
+        Generate a  multiple choice questions. 
         """
     )    
     
@@ -72,11 +69,11 @@ async def test(user_input):
 
 
 @router_gen_mcq.post("/urls")
-async def process_urls(url: URL):
+async def process_urls(request: Request, url: str = Form(...)):
     print(url)
     data_scrapper_obj = data_scrapper()
     print(data_scrapper_obj)
-    data_scrapper_obj.scrape_web_content(url.url)
+    data_scrapper_obj.scrape_web_content(url)
     data = data_scrapper_obj.myWebData
     
     # for the sake of simplicity and avoid overuse of API i am considering only 3 chunks of data
@@ -91,8 +88,13 @@ async def process_urls(url: URL):
         
     ic(chunks)
 
-    L = await asyncio.gather(*(test(chunk) for chunk in chunks))
-    return L
+    
+    mcqs = await asyncio.gather(*(test(chunk) for chunk in chunks))
+    print(mcqs)
+    ans = []
+    # for mcq in mcqs:
+        
+    return templates.TemplateResponse("app.html", {"request": request, "mcqs": mcqs})
       
     
     
@@ -118,8 +120,13 @@ async def upload_pdf(pdf: UploadFile = File(...)):
             
         ic(chunks)
 
-        L = await asyncio.gather(*(test(chunk) for chunk in chunks))
-        return L
+        mcqs = await asyncio.gather(*(test(chunk) for chunk in chunks))
+        print(mcqs)
+        # for mcq 
+        
+        return mcqs
+        
+        
         
     else:
         return JSONResponse(content={"error": "Please upload a PDF file"}, status_code=400)

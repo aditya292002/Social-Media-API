@@ -22,7 +22,7 @@ templates = Jinja2Templates(directory="templates")
 async def root(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
-@app.
+# @app.
 
 # @app.post("/")
 # async def process_login(username: str = Form(...), password: str = Form(...)):

@@ -24,16 +24,16 @@ class data_scrapper:
             self.myWebData += (tag.get_text()).split()
     
 
-    def extract_pdf_content(self): 
+    def extract_pdf_content(self, pdf_content):
         try:
             myData = []
-            with fitz.open("pdf_files/my_file.pdf") as pdf_document:
+            with fitz.open(pdf_content) as pdf_document:
                 num_pages = pdf_document.page_count
                 for page_num in range(num_pages):
                     page = pdf_document[page_num]
                     text = page.get_text()
                     myData += text.split()
-            if(len(myData) > 0):
+            if len(myData) > 0:
                 self.myPdfData = myData
         except Exception as e:
             print(f"Error: {e}")

@@ -4,7 +4,7 @@ from icecream import ic
 from fastapi import Request, Form, FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from mcq_generator import * 
+from routes.mcq_generator import * 
 from scrapper import *
 from openai_handler import *
 import asyncio
@@ -97,17 +97,37 @@ async def process_urls(request: Request, url: str = Form(...)):
     return templates.TemplateResponse("app.html", {"request": request, "mcqs": mcqs})
       
     
-    
-@router_gen_mcq.post("/pdf", response_model= list[dict])
-async def upload_pdf(pdf: UploadFile = File(...)):
-    
+@router_gen_mcq.post("/pdf")
+async def upload_pdf(request: Request, pdf: UploadFile = File(...)):
+    ic("inside upload pdf post")
     # Check if the uploaded file is a PDF
     if pdf.filename.endswith(".pdf"):
-        data_scrapper = data_scrapper()
-        data_scrapper.scrape_pdf_content(pdf)
-        data = data_scrapper.myPdfData
-        data = data[:1500]
-        
+        pdf_content = await pdf.read()  # Asynchronously read the contents of the PDF file
+        data_scrapper_obj = data_scrapper()
+        data_scrapper_obj.extract_pdf_content(pdf_content)
+        data = data_scrapper_obj.myPdfData
+
+        # For simplicity, consider only 3 chunks of data
+        data = data[:min(len(data), 1600)]
+        chunks = [' '.join(data[i:i+500][:30]) for i in range(0, len(data), 500)][:3]
+        ic(chunks)
+
+        mcqs = await asyncio.gather(*(test(chunk) for chunk in chunks))
+        print(mcqs)
+
+        return templates.TemplateResponse("app.html", {"request": request, "mcqs": mcqs})
+
+    else:
+        return JSONResponse(content={"error": "Please upload a PDF file"}, status_code=400)
+    
+@router_gen_mcq.get("/pdf")
+async def upload_pdf(request: Request, pdf: UploadFile = File(...)):
+    ic("inside upload pdf get")
+    # Check if the uploaded file is a PDF
+    if pdf.filename.endswith(".pdf"):
+        data_scrapper_obj = data_scrapper()
+        data_scrapper_obj.extract_pdf_content(pdf)
+        data = data_scrapper_obj.myPdfData
         # for the sake of simplicity and avoid overuse of API i am considering only 3 chunks of data
         data = data[:min(len(data), 1600)]
         chunks = []
@@ -120,19 +140,56 @@ async def upload_pdf(pdf: UploadFile = File(...)):
             
         ic(chunks)
 
+        
         mcqs = await asyncio.gather(*(test(chunk) for chunk in chunks))
         print(mcqs)
-        # for mcq 
+        ans = []
+        # for mcq in mcqs:
+            
+        return templates.TemplateResponse("app.html", {"request": request, "mcqs": mcqs})
         
-        return mcqs
-        
+    
         
         
     else:
         return JSONResponse(content={"error": "Please upload a PDF file"}, status_code=400)
     
     
+@router_gen_mcq.post("/pdf")
+async def upload_pdf(request: Request, pdf: UploadFile = File(...)):
+    ic("inside upload pdf")
+    # Check if the uploaded file is a PDF
+    if pdf.filename.endswith(".pdf"):
+        data_scrapper_obj = data_scrapper()
+        data_scrapper_obj.extract_pdf_content(pdf)
+        data = data_scrapper_obj.myPdfData
+        # for the sake of simplicity and avoid overuse of API i am considering only 3 chunks of data
+        data = data[:min(len(data), 1600)]
+        chunks = []
+        ind = 0
+        count_chunks = 0
+        while(ind < len(data) and count_chunks < 3):
+            chunks.append(' '.join(data[ind:ind+500][:30]))
+            ind += 500
+            count_chunks += 1
+            
+        ic(chunks)
+
+        
+        mcqs = await asyncio.gather(*(test(chunk) for chunk in chunks))
+        print(mcqs)
+        ans = []
+        # for mcq in mcqs:
+            
+        return templates.TemplateResponse("app.html", {"request": request, "mcqs": mcqs})
+        
     
+        
+        
+    else:
+        return JSONResponse(content={"error": "Please upload a PDF file"}, status_code=400)
+    
+        
     
     
     

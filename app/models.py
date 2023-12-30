@@ -20,7 +20,10 @@ class Post(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
-    owner = relationship("User")
+    owner = relationship(
+        "User"
+    )  # User is the name of the sqlalchemy model nto the actual table name
+    # it by itself figures out the relationship based on owner_id and fetch the user for us
 
 
 class User(Base):

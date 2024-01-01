@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16.1
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: LocalPasswordOnly
+    ports:
+      - "6000:5432"
+
+  api:
+    build: .
+    volumes:
+      - postgres_db:/var/lib/postgresql/data  
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://admin:LocalPasswordOnly@postgres:6000/postgres
+
+volumes:
+  postgres_db:

@@ -1,3 +1,8 @@
 -- delete from users;
--- select * from sers;
-select * from posts;
+select * from users;
+-- select * from posts;
+-- delete from users where id = 10;
+
+
+
+-- CREATE DATABASE postgres_test;
